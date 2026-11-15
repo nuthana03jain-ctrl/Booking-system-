@@ -5,7 +5,7 @@ const { DatabaseSync } = require('node:sqlite');
 
 // Opens the file "booking.db" (creates it if it doesn't exist yet).
 // Tests can pass ':memory:' to get a throwaway database instead.
-function openDatabase(file = 'booking.db') {
+function openDatabase(file = process.env.DB_PATH || 'booking.db') {
   const db = new DatabaseSync(file);
 
   // Tab 1: every place a guest can stay. Each row is one place.

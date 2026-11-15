@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "Hotel & vacation rental booking website",
   "main": "server.js",
+  "engines": { "node": ">=22" },
   "scripts": {
     "start": "node server.js",
     "test": "node test.js"

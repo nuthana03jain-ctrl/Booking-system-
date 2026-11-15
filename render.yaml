@@ -1,0 +1,11 @@
+# render.yaml — instructions for the Render hosting service.
+services:
+  - type: web
+    name: stayeasy
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_VERSION
+        value: 22
