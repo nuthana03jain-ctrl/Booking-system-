@@ -29,6 +29,7 @@ function openDatabase(file = process.env.DB_PATH || 'booking.db') {
       property_id   INTEGER NOT NULL REFERENCES properties(id),
       guest_name    TEXT NOT NULL,
       guest_email   TEXT NOT NULL,
+      guest_phone   TEXT NOT NULL,      -- 10-digit Indian mobile number
       guests        INTEGER NOT NULL,
       check_in      TEXT NOT NULL,   -- dates are stored as "YYYY-MM-DD"
       check_out     TEXT NOT NULL,

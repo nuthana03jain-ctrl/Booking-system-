@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>StayEasy — Hotels & Vacation Rentals</title>
+  <title>StayEasy — Hotels & Vacation Rentals in India</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -16,9 +16,29 @@
 
   <!-- SEARCH FORM -->
   <section class="hero">
-    <h2>Find your perfect stay</h2>
+    <h2>Find your perfect stay in India</h2>
     <form id="search-form">
-      <label>Where to?   <input id="city" placeholder="e.g. Goa"></label>
+      <label>Where to?
+        <input id="city" list="cities" placeholder="e.g. Goa" autocomplete="off">
+      </label>
+      <datalist id="cities">
+        <option value="Mumbai"></option>
+        <option value="Delhi"></option>
+        <option value="Bengaluru"></option>
+        <option value="Jaipur"></option>
+        <option value="Goa"></option>
+        <option value="Munnar"></option>
+        <option value="Udaipur"></option>
+        <option value="Kochi"></option>
+        <option value="Manali"></option>
+        <option value="Shimla"></option>
+        <option value="Chennai"></option>
+        <option value="Hyderabad"></option>
+        <option value="Kolkata"></option>
+        <option value="Agra"></option>
+        <option value="Rishikesh"></option>
+        <option value="Ooty"></option>
+      </datalist>
       <label>Type
         <select id="type">
           <option value="">Hotels & rentals</option>
@@ -36,7 +56,7 @@
 
   <!-- RESULTS -->
   <main>
-    <p id="result-count"></p>
+    <p id="result-count" class="status"></p>
     <div id="results" class="grid"></div>
   </main>
 
@@ -47,6 +67,10 @@
       <div id="modal-content"></div>
     </div>
   </div>
+
+  <footer>
+    <a href="admin.html">Host login</a>
+  </footer>
 
   <script src="app.js"></script>
 </body>

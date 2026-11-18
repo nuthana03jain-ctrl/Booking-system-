@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>StayEasy — Host area</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <header>
+    <h1>🏝️ StayEasy · Host area</h1>
+    <a href="index.html" class="link-btn">Back to site</a>
+  </header>
+
+  <main>
+    <!-- Step 1: password -->
+    <section id="login" class="card-box login">
+      <h2>Host login</h2>
+      <form id="login-form">
+        <label>Password <input id="password" type="password" required></label>
+        <p class="error" id="login-error"></p>
+        <button type="submit">Log in</button>
+      </form>
+    </section>
+
+    <!-- Step 2: shown after login -->
+    <section id="panel" class="hidden">
+      <h2>Bookings <span id="bookings-count" class="muted"></span></h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Code</th><th>Place</th><th>Guest</th><th>Phone</th><th>Email</th>
+                <th>Check-in</th><th>Check-out</th><th>Guests</th><th>Total</th><th>Status</th></tr>
+          </thead>
+          <tbody id="bookings"></tbody>
+        </table>
+      </div>
+
+      <h2>Add a place</h2>
+      <form id="add-form" class="card-box add-form">
+        <label>Name <input name="name" required></label>
+        <label>Type
+          <select name="type">
+            <option value="hotel">Hotel</option>
+            <option value="rental">Vacation rental</option>
+          </select>
+        </label>
+        <label>City <input name="city" required></label>
+        <label>Description <input name="description" required></label>
+        <label>Price per night (₹) <input name="price_per_night" type="number" min="1" required></label>
+        <label>Max guests <input name="max_guests" type="number" min="1" required></label>
+        <label>Bedrooms <input name="bedrooms" type="number" min="0" required></label>
+        <label>Picture (one emoji, e.g. 🏡) <input name="emoji" required></label>
+        <button type="submit">Add place</button>
+        <p id="add-msg" class="muted"></p>
+      </form>
+    </section>
+  </main>
+
+  <script src="admin.js"></script>
+</body>
+</html>

@@ -27,8 +27,18 @@ price → it writes the booking into the database → it replies with a confirma
 ## Rules the system enforces
 - No two confirmed bookings can overlap for the same place (check-out day = next guest's check-in day is OK).
 - Guests can't exceed a place's capacity; dates can't be in the past; check-out must be after check-in.
-- Price is calculated by the server, not trusted from the browser.
+- Price is calculated by the server, not trusted from the browser. Prices are in rupees (₹).
+- Mobile numbers must be valid Indian 10-digit numbers (starting 6–9).
 - Viewing/cancelling needs the confirmation code **and** the booking email.
+
+## Host area
+Hosts open `/admin.html` (link at the bottom of the home page). They log in with the
+password in the `ADMIN_PASSWORD` setting, see all bookings, and add new places.
+On Render, set `ADMIN_PASSWORD` under the service's **Environment** tab.
+Without it, the host area is switched off on purpose.
+
+## Product plan
+See `PRODUCT.md` for who the site is for, what's built and what comes next.
 
 ## Ideas for next steps
 1. Real photos and a detail page per property
