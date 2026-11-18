@@ -27,7 +27,7 @@ test('search finds places by city and type', async () => {
 test('a booking is created with the right price', async () => {
   const res = await post('/api/bookings', { propertyId: 5, ...guest, checkIn: day(10), checkOut: day(13) });
   assert.strictEqual(res.status, 201);
-  assert.strictEqual((await res.json()).total_price, 70 * 3);   // 3 nights x $70
+  assert.strictEqual((await res.json()).total_price, 3000 * 3);  // 3 nights x ₹3,000
 });
 
 test('the same dates cannot be booked twice, and cancelling frees them', async () => {

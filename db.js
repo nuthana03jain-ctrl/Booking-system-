@@ -16,7 +16,7 @@ function openDatabase(file = process.env.DB_PATH || 'booking.db') {
       type          TEXT NOT NULL,   -- 'hotel' or 'rental'
       city          TEXT NOT NULL,
       description   TEXT NOT NULL,
-      price_per_night INTEGER NOT NULL, -- in dollars
+      price_per_night INTEGER NOT NULL, -- in Indian rupees (₹)
       max_guests    INTEGER NOT NULL,
       bedrooms      INTEGER NOT NULL,
       emoji         TEXT NOT NULL    -- a little picture for the card
@@ -52,14 +52,14 @@ function seedIfEmpty(db) {
   `);
 
   const samples = [
-    ['Grand Harbor Hotel',   'hotel',  'Mumbai',  'Sea-view rooms, rooftop pool and breakfast included.', 120, 3, 1, '🏨'],
-    ['Lotus Palace Hotel',   'hotel',  'Jaipur',  'A heritage hotel with a courtyard and spa.',            95, 2, 1, '🏰'],
-    ['City Central Suites',  'hotel',  'Bengaluru','Modern suites near the business district.',            80, 3, 1, '🌆'],
-    ['Beachside Villa',      'rental', 'Goa',     'Private villa 2 minutes from the beach, with a pool.', 210, 8, 4, '🏖️'],
-    ['Hilltop Cottage',      'rental', 'Munnar',  'Cozy cottage among tea gardens. Perfect for couples.',  70, 3, 1, '🏡'],
-    ['Lakeview Apartment',   'rental', 'Udaipur', 'Bright 2-bedroom apartment overlooking the lake.',     110, 5, 2, '🌅'],
-    ['Backwater Houseboat',  'rental', 'Kochi',   'Sleep on the water! Includes a cook and a guide.',     150, 4, 2, '🛶'],
-    ['Mountain Lodge',       'hotel',  'Manali',  'Warm lodge with fireplace and mountain views.',         65, 4, 2, '🏔️'],
+    ['Grand Harbor Hotel',   'hotel',  'Mumbai',  'Sea-view rooms, rooftop pool and breakfast included.', 6500, 3, 1, '🏨'],
+    ['Lotus Palace Hotel',   'hotel',  'Jaipur',  'A heritage hotel with a courtyard and spa.',            5000, 2, 1, '🏰'],
+    ['City Central Suites',  'hotel',  'Bengaluru','Modern suites near the business district.',            3500, 3, 1, '🌆'],
+    ['Beachside Villa',      'rental', 'Goa',     'Private villa 2 minutes from the beach, with a pool.', 12000, 8, 4, '🏖️'],
+    ['Hilltop Cottage',      'rental', 'Munnar',  'Cozy cottage among tea gardens. Perfect for couples.',  3000, 3, 1, '🏡'],
+    ['Lakeview Apartment',   'rental', 'Udaipur', 'Bright 2-bedroom apartment overlooking the lake.',     6000, 5, 2, '🌅'],
+    ['Backwater Houseboat',  'rental', 'Kochi',   'Sleep on the water! Includes a cook and a guide.',     8000, 4, 2, '🛶'],
+    ['Mountain Lodge',       'hotel',  'Manali',  'Warm lodge with fireplace and mountain views.',         3500, 4, 2, '🏔️'],
   ];
   for (const s of samples) insert.run(...s);
 }

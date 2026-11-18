@@ -4,7 +4,7 @@ const $ = (id) => document.getElementById(id);   // shortcut: find an element by
 
 // ---------- Small helpers ----------
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-const money = (n) => '$' + n.toLocaleString();
+const money = (n) => '₹' + n.toLocaleString('en-IN');
 const todayStr = () => new Date().toISOString().slice(0, 10);
 
 async function api(url, options) {
