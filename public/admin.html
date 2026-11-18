@@ -4,23 +4,28 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>StayEasy — Host area</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-  <header>
-    <h1>🏝️ StayEasy · Host area</h1>
-    <a href="index.html" class="link-btn">Back to site</a>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a href="index.html" class="logo"><span class="logo-mark">S</span>StayEasy <span class="muted" style="font-weight:600">· Hosts</span></a>
+      <a href="index.html" class="btn btn-ghost btn-sm">Back to site</a>
+    </div>
   </header>
 
-  <main>
+  <main class="page">
     <!-- Step 1: password -->
-    <section id="login" class="card-box login">
+    <section id="login" class="card-box">
       <h2>Host login</h2>
       <form id="login-form">
-        <label>Password <input id="password" type="password" required></label>
-        <p class="error" id="login-error"></p>
-        <button type="submit">Log in</button>
+        <label>Password <input id="password" type="password" autocomplete="current-password" required></label>
+        <p class="error" id="login-error" role="alert"></p>
+        <button type="submit" class="btn btn-primary">Log in</button>
       </form>
     </section>
 
@@ -43,16 +48,24 @@
         <label>Type
           <select name="type">
             <option value="hotel">Hotel</option>
-            <option value="rental">Vacation rental</option>
+            <option value="rental">Holiday home</option>
           </select>
         </label>
-        <label>City <input name="city" required></label>
+        <label>City <input name="city" list="host-cities" required></label>
+        <datalist id="host-cities">
+          <option value="Goa"></option><option value="Manali"></option><option value="Udaipur"></option>
+          <option value="Jaipur"></option><option value="Kochi"></option><option value="Munnar"></option>
+          <option value="Mumbai"></option><option value="Bengaluru"></option><option value="Shimla"></option>
+        </datalist>
         <label>Description <input name="description" required></label>
         <label>Price per night (₹) <input name="price_per_night" type="number" min="1" required></label>
         <label>Max guests <input name="max_guests" type="number" min="1" required></label>
         <label>Bedrooms <input name="bedrooms" type="number" min="0" required></label>
-        <label>Picture (one emoji, e.g. 🏡) <input name="emoji" required></label>
-        <button type="submit">Add place</button>
+        <label>Amenities <span class="hint">Separate with commas, e.g. Wi-Fi, Pool, Breakfast</span>
+          <input name="amenities" placeholder="Wi-Fi, AC, Parking"></label>
+        <label>Photo link (optional) <span class="hint">A web address starting with https:// . Without one, we show an illustration of the city.</span>
+          <input name="image_url" type="url" placeholder="https://..."></label>
+        <button type="submit" class="btn btn-primary">Add place</button>
         <p id="add-msg" class="muted"></p>
       </form>
     </section>

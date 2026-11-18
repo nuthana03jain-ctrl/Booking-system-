@@ -148,7 +148,7 @@ function createApp(db) {
   // Needs BOTH the code and the email, so strangers can't snoop on bookings.
   async function findBooking(code, email) {
     const r = await db.query(`
-      SELECT b.*, p.name AS property_name, p.city, p.emoji
+      SELECT b.*, p.name AS property_name, p.city, p.emoji, p.type, p.image_url
       FROM bookings b JOIN properties p ON p.id = b.property_id
       WHERE b.code = $1 AND b.guest_email = $2`,
       [String(code || '').toUpperCase(), String(email || '').trim().toLowerCase()]);
@@ -185,19 +185,27 @@ function createApp(db) {
     const p = req.body || {};
     const price = Number(p.price_per_night), maxGuests = Number(p.max_guests), bedrooms = Number(p.bedrooms);
 
-    if (!p.name || !p.city || !p.description || !p.emoji || !['hotel', 'rental'].includes(p.type)) {
-      throw new HttpError(400, 'Please fill in name, type, city, description and picture.');
+    if (!p.name || !p.city || !p.description || !['hotel', 'rental'].includes(p.type)) {
+      throw new HttpError(400, 'Please fill in name, type, city and description.');
     }
     if (!Number.isInteger(price) || price < 1 || !Number.isInteger(maxGuests) || maxGuests < 1
         || !Number.isInteger(bedrooms) || bedrooms < 0) {
       throw new HttpError(400, 'Price and guest numbers must be whole numbers above zero.');
     }
 
+    // Photo link is optional. If given, it must be a web address starting with https://
+    const imageUrl = String(p.image_url || '').trim();
+    if (imageUrl && !/^https:\/\/\S+$/.test(imageUrl)) {
+      throw new HttpError(400, 'The photo link must start with https://');
+    }
+    // Amenities: "Pool, Wi-Fi , AC" -> "Pool,Wi-Fi,AC"
+    const amenities = String(p.amenities || '').split(',').map((a) => a.trim()).filter(Boolean).slice(0, 12).join(',');
+
     const r = await db.query(`
-      INSERT INTO properties (name, type, city, description, price_per_night, max_guests, bedrooms, emoji)
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING id`,
+      INSERT INTO properties (name, type, city, description, price_per_night, max_guests, bedrooms, emoji, amenities, image_url)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING id`,
       [String(p.name).trim(), p.type, String(p.city).trim(), String(p.description).trim(),
-       price, maxGuests, bedrooms, String(p.emoji).trim()]);
+       price, maxGuests, bedrooms, String(p.emoji || '🏠').trim() || '🏠', amenities, imageUrl]);
     res.status(201).json({ id: r.rows[0].id });
   });
 

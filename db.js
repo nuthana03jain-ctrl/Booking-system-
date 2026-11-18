@@ -17,6 +17,18 @@ const SAMPLES = [
   ['Mountain Lodge',      'hotel',  'Manali',    'Warm lodge with fireplace and mountain views.',         3500, 4, 2, '🏔️'],
 ];
 
+// What each sample place offers (shown as little tags on the site).
+const SAMPLE_AMENITIES = {
+  'Grand Harbor Hotel': 'Sea view,Pool,Breakfast,Wi-Fi,AC',
+  'Lotus Palace Hotel': 'Spa,Breakfast,Heritage stay,Wi-Fi,AC',
+  'City Central Suites': 'Workspace,Wi-Fi,AC,Gym,Parking',
+  'Beachside Villa': 'Private pool,Beach access,Kitchen,Wi-Fi,Parking',
+  'Hilltop Cottage': 'Mountain view,Kitchen,Garden,Wi-Fi',
+  'Lakeview Apartment': 'Lake view,Kitchen,Wi-Fi,AC',
+  'Backwater Houseboat': 'Cook included,Guide,Meals,AC',
+  'Mountain Lodge': 'Fireplace,Mountain view,Breakfast,Parking',
+};
+
 // Opens the database and makes sure its two "tables" exist.
 // Pass a link to use that database; pass null to force the temporary practice one (used by tests).
 async function openDatabase(connectionString = process.env.DATABASE_URL) {
@@ -46,6 +58,11 @@ async function openDatabase(connectionString = process.env.DATABASE_URL) {
       emoji           TEXT NOT NULL                     -- a little picture for the card
     )`);
 
+  // Added later: amenities ("Pool,Wi-Fi") and an optional photo link.
+  // "IF NOT EXISTS" means this is safe to run every time, even on a database that already has them.
+  await pool.query("ALTER TABLE properties ADD COLUMN IF NOT EXISTS amenities TEXT NOT NULL DEFAULT ''");
+  await pool.query("ALTER TABLE properties ADD COLUMN IF NOT EXISTS image_url TEXT NOT NULL DEFAULT ''");
+
   // Tab 2: every reservation. Each row is one booking.
   await pool.query(`
     CREATE TABLE IF NOT EXISTS bookings (
@@ -71,6 +88,9 @@ async function openDatabase(connectionString = process.env.DATABASE_URL) {
         s
       );
     }
+  }
+  for (const [name, list] of Object.entries(SAMPLE_AMENITIES)) {
+    await pool.query("UPDATE properties SET amenities = $1 WHERE name = $2 AND amenities = ''", [list, name]);
   }
   return pool;
 }

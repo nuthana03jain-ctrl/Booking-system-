@@ -94,3 +94,16 @@ test('the host can add a place that then appears in search', async () => {
   assert.strictEqual(found[0].name, 'Pine Hill Cottage');
   assert.strictEqual((await post('/api/admin/properties', { ...place, price_per_night: -5 }, host)).status, 400);
 });
+
+test('places come with amenities, and host photo links are checked', async () => {
+  const goa = await (await fetch(base + '/api/properties?city=goa')).json();
+  assert.ok(goa[0].amenities.includes('Private pool'));
+  const host = { 'x-admin-password': ADMIN };
+  const place = { name: 'Fort View Stay', type: 'hotel', city: 'Agra', description: 'Rooms facing the fort.',
+                  price_per_night: 2500, max_guests: 2, bedrooms: 1, amenities: ' Wi-Fi , AC ,', image_url: 'javascript:alert(1)' };
+  assert.strictEqual((await post('/api/admin/properties', place, host)).status, 400);           // unsafe link refused
+  assert.strictEqual((await post('/api/admin/properties', { ...place, image_url: 'https://example.com/fort.jpg' }, host)).status, 201);
+  const agra = await (await fetch(base + '/api/properties?city=agra')).json();
+  assert.strictEqual(agra[0].amenities, 'Wi-Fi,AC');                                             // tidied up
+  assert.strictEqual(agra[0].image_url, 'https://example.com/fort.jpg');
+});

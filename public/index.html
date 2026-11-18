@@ -3,75 +3,138 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>StayEasy — Hotels & Vacation Rentals in India</title>
+  <title>StayEasy — Hotels & Holiday Homes across India</title>
+  <meta name="description" content="Book hotels and holiday homes across India. Prices in rupees, free cancellation, pay at the property.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
   <!-- TOP BAR -->
-  <header>
-    <h1>🏝️ StayEasy</h1>
-    <button id="my-booking-btn" class="link-btn">Find my booking</button>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a href="#" class="logo"><span class="logo-mark">S</span>StayEasy</a>
+      <nav>
+        <a href="#destinations">Destinations</a>
+        <a href="#stays">Stays</a>
+        <button id="my-booking-btn" class="btn btn-ghost btn-sm">My booking</button>
+      </nav>
+    </div>
   </header>
 
-  <!-- SEARCH FORM -->
+  <!-- BIG WELCOME BANNER WITH SEARCH -->
   <section class="hero">
-    <h2>Find your perfect stay in India</h2>
-    <form id="search-form">
-      <label>Where to?
-        <input id="city" list="cities" placeholder="e.g. Goa" autocomplete="off">
-      </label>
+    <div class="hero-art" id="hero-art"></div>
+    <div class="hero-content">
+      <p class="eyebrow">Hotels · Villas · Houseboats · Cottages</p>
+      <h1>Find a stay you'll love, anywhere in India</h1>
+      <p class="lead">Clear prices in rupees. Free cancellation. Pay at the property.</p>
+
+      <form id="search-form" class="search-card" autocomplete="off">
+        <label class="field field-city">
+          <span><svg class="icon" viewBox="0 0 24 24"><path d="M12 22s7-6.5 7-12a7 7 0 1 0-14 0c0 5.5 7 12 7 12z"/><circle cx="12" cy="10" r="2.5"/></svg>Where to?</span>
+          <input id="city" list="cities" placeholder="Search a city, e.g. Goa">
+        </label>
+        <label class="field">
+          <span><svg class="icon" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Check-in</span>
+          <input id="checkIn" type="date">
+        </label>
+        <label class="field">
+          <span><svg class="icon" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Check-out</span>
+          <input id="checkOut" type="date">
+        </label>
+        <label class="field">
+          <span><svg class="icon" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.5a3.5 3.5 0 0 1 0 7M21.5 20a6.5 6.5 0 0 0-4-6"/></svg>Guests</span>
+          <input id="guests" type="number" min="1" max="20" value="2">
+        </label>
+        <button type="submit" class="btn btn-primary btn-search">
+          <svg class="icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>Search
+        </button>
+      </form>
       <datalist id="cities">
-        <option value="Mumbai"></option>
-        <option value="Delhi"></option>
-        <option value="Bengaluru"></option>
-        <option value="Jaipur"></option>
-        <option value="Goa"></option>
-        <option value="Munnar"></option>
-        <option value="Udaipur"></option>
-        <option value="Kochi"></option>
-        <option value="Manali"></option>
-        <option value="Shimla"></option>
-        <option value="Chennai"></option>
-        <option value="Hyderabad"></option>
+        <option value="Goa"></option><option value="Manali"></option><option value="Udaipur"></option>
+        <option value="Jaipur"></option><option value="Kochi"></option><option value="Munnar"></option>
+        <option value="Mumbai"></option><option value="Bengaluru"></option><option value="Delhi"></option>
+        <option value="Shimla"></option><option value="Rishikesh"></option><option value="Ooty"></option>
+        <option value="Agra"></option><option value="Hyderabad"></option><option value="Chennai"></option>
         <option value="Kolkata"></option>
-        <option value="Agra"></option>
-        <option value="Rishikesh"></option>
-        <option value="Ooty"></option>
       </datalist>
-      <label>Type
-        <select id="type">
-          <option value="">Hotels & rentals</option>
-          <option value="hotel">Hotels</option>
-          <option value="rental">Vacation rentals</option>
-        </select>
-      </label>
-      <label>Check-in  <input id="checkIn"  type="date"></label>
-      <label>Check-out <input id="checkOut" type="date"></label>
-      <label>Guests    <input id="guests" type="number" min="1" value="2"></label>
-      <button type="submit">Search</button>
-    </form>
-    <p id="search-error" class="error"></p>
+      <p id="search-error" class="hero-error" role="alert"></p>
+
+      <ul class="perks">
+        <li><svg class="icon" viewBox="0 0 24 24"><path d="M5 12l5 5 9-10"/></svg>Free cancellation</li>
+        <li><svg class="icon" viewBox="0 0 24 24"><path d="M5 12l5 5 9-10"/></svg>No booking fees</li>
+        <li><svg class="icon" viewBox="0 0 24 24"><path d="M5 12l5 5 9-10"/></svg>Instant confirmation</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- POPULAR DESTINATIONS -->
+  <section class="section" id="destinations">
+    <div class="section-head">
+      <h2>Popular destinations</h2>
+      <p class="muted">Tap a place to see where you can stay.</p>
+    </div>
+    <div class="dest-row" id="dest-row"></div>
   </section>
 
   <!-- RESULTS -->
-  <main>
-    <p id="result-count" class="status"></p>
+  <section class="section" id="stays">
+    <div class="toolbar">
+      <div>
+        <h2 id="results-title">All stays</h2>
+        <p id="result-count" class="muted" aria-live="polite"></p>
+      </div>
+      <div class="toolbar-controls">
+        <div class="chips" role="group" aria-label="Type of stay">
+          <button class="chip active" data-type="" aria-pressed="true">All</button>
+          <button class="chip" data-type="hotel" aria-pressed="false">Hotels</button>
+          <button class="chip" data-type="rental" aria-pressed="false">Holiday homes</button>
+        </div>
+        <select id="sort" aria-label="Sort stays">
+          <option value="price-asc">Price: low to high</option>
+          <option value="price-desc">Price: high to low</option>
+          <option value="guests-desc">Most space</option>
+        </select>
+      </div>
+    </div>
     <div id="results" class="grid"></div>
-  </main>
+  </section>
 
-  <!-- POP-UP WINDOW (used for booking and for looking up bookings) -->
-  <div id="modal" class="modal hidden">
-    <div class="modal-box">
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="footer-inner">
+      <div>
+        <a href="#" class="logo"><span class="logo-mark">S</span>StayEasy</a>
+        <p class="muted">Hotels and holiday homes across India, with clear prices in rupees.</p>
+      </div>
+      <div>
+        <h4>Guests</h4>
+        <a href="#" id="footer-booking">Find my booking</a>
+        <a href="#destinations">Destinations</a>
+      </div>
+      <div>
+        <h4>Hosts</h4>
+        <a href="admin.html">Host login</a>
+      </div>
+    </div>
+    <p class="footer-note">© StayEasy · A demo project</p>
+  </footer>
+
+  <!-- POP-UP WINDOW (details, booking, confirmation, find my booking) -->
+  <div id="modal" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-box" id="modal-box">
       <button id="modal-close" class="close" aria-label="Close">×</button>
       <div id="modal-content"></div>
     </div>
   </div>
 
-  <footer>
-    <a href="admin.html">Host login</a>
-  </footer>
+  <!-- Small message that pops up at the bottom, e.g. "Code copied" -->
+  <div id="toast" class="toast" role="status"></div>
 
+  <script src="scenes.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
