@@ -11,3 +11,5 @@ services:
         value: 22
       - key: ADMIN_PASSWORD      # the host's password. Set the real value in Render's dashboard.
         sync: false
+      - key: DATABASE_URL        # the link to the Neon database. Set the real value in Render's dashboard.
+        sync: false

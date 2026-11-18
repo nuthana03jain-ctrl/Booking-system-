@@ -14,7 +14,7 @@ Finding a stay means jumping between many sites, and small hosts are hard to fin
 | Guest booking | Book with name, Indian mobile number and email. Get a confirmation code. |
 | Guest self-service | Find a booking with the code and email. Cancel it. |
 | Host area | Log in with a password. See all bookings. Add a new place. |
-| Reliability | Clear "waking up the server" message. Clear error messages. India time for "today". |
+| Reliability | Clear "waking up the server" message. Clear error messages. India time for "today". Bookings saved in a permanent Postgres database, and two guests can't book the same room at the same instant. |
 
 ## Decisions I made as product manager
 1. **Rupees and Indian mobile numbers first.** These are the things an Indian guest or host checks first.
@@ -23,7 +23,7 @@ Finding a stay means jumping between many sites, and small hosts are hard to fin
 4. **No tax figure yet.** GST rules depend on the property and the price, so an accountant should confirm them before we add a tax line.
 
 ## Next priorities (in order)
-1. **Keep data safe.** The free hosting can lose bookings on restart. Move to a database that persists.
+1. ~~**Keep data safe.**~~ Done: bookings are stored in Neon's Postgres database.
 2. **Online payment** (for example Razorpay with UPI and cards), plus a payment receipt.
 3. **Confirmation by SMS or WhatsApp** using the guest's mobile number.
 4. **Host accounts** so each owner sees only their own places.
@@ -37,6 +37,6 @@ Finding a stay means jumping between many sites, and small hosts are hard to fin
 - Time for a host to add a place (shows how easy the host area is).
 
 ## Risks
-- **Lost bookings** on free hosting (fix in priority 1).
+- **Free database limits:** Neon's free plan has a storage and usage cap, and it pauses when idle, so the first request after a quiet spell is slower.
 - **Host password** must be strong and kept private.
 - **Tax and legal rules** for online bookings in India need professional advice before taking real money.

@@ -11,7 +11,7 @@ const ADMIN = 'test-host-password';
 let server, base;
 test.before(async () => {
   process.env.ADMIN_PASSWORD = ADMIN;
-  server = createApp(openDatabase(':memory:')).listen(0);   // throwaway database
+  server = createApp(await openDatabase(null)).listen(0);   // throwaway practice database
   base = `http://localhost:${server.address().port}`;
 });
 test.after(() => server.close());

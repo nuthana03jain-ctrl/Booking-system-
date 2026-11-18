@@ -15,6 +15,11 @@ function cleanPhone(raw) {
   return /^[6-9]\d{9}$/.test(digits) ? digits : null;
 }
 
+// An error that carries the HTTP status to send back (e.g. 409 = "conflict").
+class HttpError extends Error {
+  constructor(status, message) { super(message); this.status = status; }
+}
+
 function createApp(db) {
   const app = express();
   const adminPassword = process.env.ADMIN_PASSWORD || '';
@@ -24,12 +29,12 @@ function createApp(db) {
   // Host-only routes: the password must come in a header and match exactly.
   function requireAdmin(req, res, next) {
     if (!adminPassword) {
-      return res.status(503).json({ error: 'Host login is turned off. The site owner must set ADMIN_PASSWORD.' });
+      return next(new HttpError(503, 'Host login is turned off. The site owner must set ADMIN_PASSWORD.'));
     }
     const given = Buffer.from(String(req.get('x-admin-password') || ''));
     const wanted = Buffer.from(adminPassword);
     const ok = given.length === wanted.length && crypto.timingSafeEqual(given, wanted);
-    if (!ok) return res.status(401).json({ error: 'Wrong password.' });
+    if (!ok) return next(new HttpError(401, 'Wrong password.'));
     next();
   }
 
@@ -42,17 +47,16 @@ function createApp(db) {
   // Number of nights between two "YYYY-MM-DD" dates.
   const nightsBetween = (a, b) => Math.round((new Date(b) - new Date(a)) / 86400000);
 
-  // Is this place free for the whole stay?
+  // Is this place free for the whole stay? Uses either the database or a transaction.
   // Two stays CLASH when each one starts before the other one ends.
   // (Check-out morning and check-in afternoon on the same day is fine.)
-  function isAvailable(propertyId, checkIn, checkOut) {
-    const clash = db.prepare(`
+  async function isAvailable(client, propertyId, checkIn, checkOut) {
+    const clash = await client.query(`
       SELECT 1 FROM bookings
-      WHERE property_id = ? AND status = 'confirmed'
-        AND check_in < ? AND check_out > ?
-      LIMIT 1
-    `).get(propertyId, checkOut, checkIn);
-    return !clash;
+      WHERE property_id = $1 AND status = 'confirmed'
+        AND check_in < $2 AND check_out > $3
+      LIMIT 1`, [propertyId, checkOut, checkIn]);
+    return clash.rows.length === 0;
   }
 
   // Check dates from the page. Returns an error message, or null if all is fine.
@@ -65,122 +69,143 @@ function createApp(db) {
 
   // ---------- 1. Search places ----------
   // Example: GET /api/properties?city=goa&type=rental&guests=4&checkIn=2026-12-01&checkOut=2026-12-05
-  app.get('/api/properties', (req, res) => {
+  app.get('/api/properties', async (req, res) => {
     const { city, type, guests, checkIn, checkOut } = req.query;
 
     let sql = 'SELECT * FROM properties WHERE 1=1';
     const params = [];
-    if (city)   { sql += ' AND city LIKE ?';        params.push(`%${city}%`); }
-    if (type)   { sql += ' AND type = ?';           params.push(type); }
-    if (guests) { sql += ' AND max_guests >= ?';    params.push(Number(guests)); }
+    if (city)   { params.push(`%${city}%`);        sql += ` AND city ILIKE $${params.length}`; }
+    if (type)   { params.push(type);               sql += ` AND type = $${params.length}`; }
+    if (guests) { params.push(Number(guests));     sql += ` AND max_guests >= $${params.length}`; }
     sql += ' ORDER BY price_per_night';
 
-    let results = db.prepare(sql).all(...params);
+    let results = (await db.query(sql, params)).rows;
 
     // If the visitor chose dates, hide places that are already taken.
     if (checkIn && checkOut) {
       const problem = dateProblem(checkIn, checkOut);
-      if (problem) return res.status(400).json({ error: problem });
+      if (problem) throw new HttpError(400, problem);
       const nights = nightsBetween(checkIn, checkOut);
+      const free = await Promise.all(results.map((p) => isAvailable(db, p.id, checkIn, checkOut)));
       results = results
-        .filter((p) => isAvailable(p.id, checkIn, checkOut))
+        .filter((_, i) => free[i])
         .map((p) => ({ ...p, nights, total_price: nights * p.price_per_night }));
     }
     res.json(results);
   });
 
   // ---------- 2. Make a booking ----------
-  app.post('/api/bookings', (req, res) => {
+  app.post('/api/bookings', async (req, res) => {
     const { propertyId, guestName, guestEmail, guestPhone, guests, checkIn, checkOut } = req.body || {};
 
     // Check what the visitor typed.
-    if (!guestName || !String(guestName).trim()) return res.status(400).json({ error: 'Please enter your name.' });
+    if (!guestName || !String(guestName).trim()) throw new HttpError(400, 'Please enter your name.');
     const phone = cleanPhone(guestPhone);
-    if (!phone) return res.status(400).json({ error: 'Please enter a valid 10-digit Indian mobile number.' });
-    if (!/^\S+@\S+\.\S+$/.test(guestEmail || '')) return res.status(400).json({ error: 'Please enter a valid email.' });
+    if (!phone) throw new HttpError(400, 'Please enter a valid 10-digit Indian mobile number.');
+    if (!/^\S+@\S+\.\S+$/.test(guestEmail || '')) throw new HttpError(400, 'Please enter a valid email.');
     const problem = dateProblem(checkIn, checkOut);
-    if (problem) return res.status(400).json({ error: problem });
-
-    const property = db.prepare('SELECT * FROM properties WHERE id = ?').get(propertyId);
-    if (!property) return res.status(404).json({ error: 'That place does not exist.' });
+    if (problem) throw new HttpError(400, problem);
 
     const guestCount = Number(guests);
-    if (!Number.isInteger(guestCount) || guestCount < 1) return res.status(400).json({ error: 'Please enter the number of guests.' });
-    if (guestCount > property.max_guests) {
-      return res.status(400).json({ error: `This place sleeps at most ${property.max_guests} guests.` });
+    if (!Number.isInteger(guestCount) || guestCount < 1) throw new HttpError(400, 'Please enter the number of guests.');
+
+    // A "transaction" groups steps so they all succeed or none do.
+    // "FOR UPDATE" locks this place's row, so two guests can't book it at the same instant.
+    const client = await db.connect();
+    try {
+      await client.query('BEGIN');
+      const found = Number.isInteger(Number(propertyId))
+        ? (await client.query('SELECT * FROM properties WHERE id = $1 FOR UPDATE', [Number(propertyId)])).rows[0]
+        : undefined;
+      if (!found) throw new HttpError(404, 'That place does not exist.');
+      if (guestCount > found.max_guests) {
+        throw new HttpError(400, `This place sleeps at most ${found.max_guests} guests.`);
+      }
+      if (!(await isAvailable(client, found.id, checkIn, checkOut))) {
+        throw new HttpError(409, 'Sorry, those dates were just taken. Please try other dates.');
+      }
+
+      // The PRICE is worked out here, never trusted from the page.
+      const total = nightsBetween(checkIn, checkOut) * found.price_per_night;
+      const code = 'BK-' + crypto.randomBytes(4).toString('hex').toUpperCase(); // e.g. BK-7F3A91C2
+
+      await client.query(`
+        INSERT INTO bookings (code, property_id, guest_name, guest_email, guest_phone, guests, check_in, check_out, total_price)
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
+        [code, found.id, String(guestName).trim(), guestEmail.trim().toLowerCase(), phone, guestCount, checkIn, checkOut, total]);
+      await client.query('COMMIT');
+
+      res.status(201).json({ code, total_price: total, property: found.name, checkIn, checkOut });
+    } catch (err) {
+      await client.query('ROLLBACK').catch(() => {});   // undo anything half-done
+      throw err;
+    } finally {
+      client.release();
     }
-
-    // Is it still free? We check again here, because someone else may have booked it a moment ago.
-    if (!isAvailable(property.id, checkIn, checkOut)) {
-      return res.status(409).json({ error: 'Sorry, those dates were just taken. Please try other dates.' });
-    }
-
-    // The PRICE is worked out here, never trusted from the page.
-    const total = nightsBetween(checkIn, checkOut) * property.price_per_night;
-    const code = 'BK-' + crypto.randomBytes(4).toString('hex').toUpperCase(); // e.g. BK-7F3A91C2
-
-    db.prepare(`
-      INSERT INTO bookings (code, property_id, guest_name, guest_email, guest_phone, guests, check_in, check_out, total_price)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(code, property.id, String(guestName).trim(), guestEmail.trim().toLowerCase(), phone, guestCount, checkIn, checkOut, total);
-
-    res.status(201).json({ code, total_price: total, property: property.name, checkIn, checkOut });
   });
 
   // ---------- 3. Look up a booking ----------
   // Needs BOTH the code and the email, so strangers can't snoop on bookings.
-  function findBooking(code, email) {
-    return db.prepare(`
+  async function findBooking(code, email) {
+    const r = await db.query(`
       SELECT b.*, p.name AS property_name, p.city, p.emoji
       FROM bookings b JOIN properties p ON p.id = b.property_id
-      WHERE b.code = ? AND b.guest_email = ?
-    `).get(String(code).toUpperCase(), String(email || '').trim().toLowerCase());
+      WHERE b.code = $1 AND b.guest_email = $2`,
+      [String(code || '').toUpperCase(), String(email || '').trim().toLowerCase()]);
+    return r.rows[0];
   }
 
-  app.get('/api/bookings/:code', (req, res) => {
-    const booking = findBooking(req.params.code, req.query.email);
-    if (!booking) return res.status(404).json({ error: 'No booking found with that code and email.' });
+  app.get('/api/bookings/:code', async (req, res) => {
+    const booking = await findBooking(req.params.code, req.query.email);
+    if (!booking) throw new HttpError(404, 'No booking found with that code and email.');
     res.json(booking);
   });
 
   // ---------- 4. Cancel a booking ----------
-  app.post('/api/bookings/:code/cancel', (req, res) => {
-    const booking = findBooking(req.params.code, req.body && req.body.email);
-    if (!booking) return res.status(404).json({ error: 'No booking found with that code and email.' });
-    if (booking.status === 'cancelled') return res.status(400).json({ error: 'This booking is already cancelled.' });
+  app.post('/api/bookings/:code/cancel', async (req, res) => {
+    const booking = await findBooking(req.params.code, req.body && req.body.email);
+    if (!booking) throw new HttpError(404, 'No booking found with that code and email.');
+    if (booking.status === 'cancelled') throw new HttpError(400, 'This booking is already cancelled.');
 
-    db.prepare("UPDATE bookings SET status = 'cancelled' WHERE id = ?").run(booking.id);
+    await db.query("UPDATE bookings SET status = 'cancelled' WHERE id = $1", [booking.id]);
     res.json({ ok: true }); // the dates become free again automatically
   });
 
   // ---------- 5. Host area: see all bookings ----------
-  app.get('/api/admin/bookings', requireAdmin, (req, res) => {
-    res.json(db.prepare(`
+  app.get('/api/admin/bookings', requireAdmin, async (req, res) => {
+    const r = await db.query(`
       SELECT b.*, p.name AS property_name
       FROM bookings b JOIN properties p ON p.id = b.property_id
-      ORDER BY b.check_in
-    `).all());
+      ORDER BY b.check_in`);
+    res.json(r.rows);
   });
 
   // ---------- 6. Host area: add a new place ----------
-  app.post('/api/admin/properties', requireAdmin, (req, res) => {
+  app.post('/api/admin/properties', requireAdmin, async (req, res) => {
     const p = req.body || {};
     const price = Number(p.price_per_night), maxGuests = Number(p.max_guests), bedrooms = Number(p.bedrooms);
 
     if (!p.name || !p.city || !p.description || !p.emoji || !['hotel', 'rental'].includes(p.type)) {
-      return res.status(400).json({ error: 'Please fill in name, type, city, description and picture.' });
+      throw new HttpError(400, 'Please fill in name, type, city, description and picture.');
     }
     if (!Number.isInteger(price) || price < 1 || !Number.isInteger(maxGuests) || maxGuests < 1
         || !Number.isInteger(bedrooms) || bedrooms < 0) {
-      return res.status(400).json({ error: 'Price and guest numbers must be whole numbers above zero.' });
+      throw new HttpError(400, 'Price and guest numbers must be whole numbers above zero.');
     }
 
-    const r = db.prepare(`
+    const r = await db.query(`
       INSERT INTO properties (name, type, city, description, price_per_night, max_guests, bedrooms, emoji)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(String(p.name).trim(), p.type, String(p.city).trim(), String(p.description).trim(),
-           price, maxGuests, bedrooms, String(p.emoji).trim());
-    res.status(201).json({ id: Number(r.lastInsertRowid) });
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING id`,
+      [String(p.name).trim(), p.type, String(p.city).trim(), String(p.description).trim(),
+       price, maxGuests, bedrooms, String(p.emoji).trim()]);
+    res.status(201).json({ id: r.rows[0].id });
+  });
+
+  // ---------- Error handler: turns any failure into a friendly message ----------
+  app.use((err, req, res, next) => {
+    if (err instanceof HttpError) return res.status(err.status).json({ error: err.message });
+    console.error(err);                                     // details go to the server log, not the guest
+    res.status(500).json({ error: 'Something went wrong on our side. Please try again.' });
   });
 
   return app;
@@ -189,7 +214,12 @@ function createApp(db) {
 // Only start listening if you run "node server.js" directly (tests import createApp instead).
 if (require.main === module) {
   const PORT = process.env.PORT || 3000;
-  createApp(openDatabase()).listen(PORT, () => console.log(`Booking site running at http://localhost:${PORT}`));
+  openDatabase().then((db) => {
+    createApp(db).listen(PORT, () => console.log(`Booking site running at http://localhost:${PORT}`));
+  }).catch((err) => {
+    console.error('Could not start:', err.message);
+    process.exit(1);
+  });
 }
 
 module.exports = { createApp };

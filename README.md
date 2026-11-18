@@ -17,7 +17,7 @@ Think of a restaurant:
 |---|---|---|
 | Web page | The menu and the table the guest sits at | `public/index.html`, `style.css`, `app.js` |
 | Server | The waiter + manager who enforce the rules | `server.js` |
-| Database | The kitchen's notebook of everything that happened | `db.js` → `booking.db` |
+| Database | The kitchen's notebook of everything that happened | `db.js` → Postgres on Neon (see below) |
 | Tests | A mystery diner who tries to break things | `test.js` |
 
 **What happens when a guest books:** the page sends the details to the server →
@@ -30,6 +30,12 @@ price → it writes the booking into the database → it replies with a confirma
 - Price is calculated by the server, not trusted from the browser. Prices are in rupees (₹).
 - Mobile numbers must be valid Indian 10-digit numbers (starting 6–9).
 - Viewing/cancelling needs the confirmation code **and** the booking email.
+
+## Database
+Bookings and places are stored in **Postgres**, a professional database, hosted for free by **Neon**.
+The site connects using the `DATABASE_URL` setting. Keep that link private, like a password.
+On your own computer, if you don't set `DATABASE_URL`, a temporary practice database is used instead.
+Its data disappears when you stop the server.
 
 ## Host area
 Hosts open `/admin.html` (link at the bottom of the home page). They log in with the
